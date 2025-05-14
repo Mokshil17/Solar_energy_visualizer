@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Energy Demonstration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        
+        h1, h2 {
+            color: #1a73e8;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            flex: 1;
+            min-width: 300px;
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .visualization {
+            flex: 2;
+            min-width: 400px;
+            height: 400px;
+            position: relative;
+            background-color: #e0f7fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .panel-container {
+            position: absolute;
+            left: 50%;
+            top: 200px;
+            transform-origin: center;
+            transform: translateX(-50%);
+            transition: transform 0.5s;
+        }
+        
+        .solar-panel {
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(to bottom right, #1a237e, #3949ab);
+            border: 2px solid #000;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            transition: all 0.5s;
+        }
+        
+        .solar-cell {
+            background-color: #0d47a1;
+            border: 1px solid #1a237e;
+        }
+        
+        .sun {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #ffeb3b, #ff9800);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #ffeb3b;
+            transition: all 0.5s;
+        }
+        
+        .sun-ray {
+            position: absolute;
+            background-color: rgba(255, 235, 59, 0.3);
+            transform-origin: 0 0;
+            transition: all 0.5s;
+        }
+        
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background-color: #8d6e63;
+            border-top: 2px solid #5d4037;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        input[type="range"], select {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .output {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            color: #d84315;
+        }
+        
+        .time-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 8px 15px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: #0d47a1;
+        }
+        
+        .data-container {
+            background-color: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .explanation {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            border-left: 5px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <h1>Solar Energy Demonstration</h1>
+    
+    <p>This interactive demonstration shows how solar panel angle, material efficiency, and sun position affect energy collection.</p>
+    
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label for="panel-angle">Solar Panel Angle (degrees): <span id="angle-value">30</span>°</label>
+                <input type="range" id="panel-angle" min="0" max="90" value="30" step="5">
+            </div>
+            
+            <div class="control-group">
+                <label for="sun-position">Sun Position (time of day):</label>
+                <input type="range" id="sun-position" min="0" max="180" value="90" step="5">
+                <div id="time-display">12:00 PM</div>
+                <div class="time-controls">
+                    <button id="animate-sun">Animate Day Cycle</button>
+                    <button id="stop-animation">Stop</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="panel-material">Panel Material:</label>
+                <select id="panel-material">
+                    <option value="0.15">Amorphous Silicon (15% efficient)</option>
+                    <option value="0.22" selected>Polycrystalline Silicon (22% efficient)</option>
+                    <option value="0.25">Monocrystalline Silicon (25% efficient)</option>
+                    <option value="0.30">High-efficiency PERC (30% efficient)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="weather-condition">Weather Condition:</label>
+                <select id="weather-condition">
+                    <option value="1.0">Clear Sky (100% sunlight)</option>
+                    <option value="0.7">Partly Cloudy (70% sunlight)</option>
+                    <option value="0.4">Overcast (40% sunlight)</option>
+                    <option value="0.2">Heavy Clouds (20% sunlight)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="visualization">
+            <div class="sun" id="sun"></div>
+            <div class="panel-container" id="panel-container">
+                <div class="solar-panel" id="solar-panel"></div>
+            </div>
+            <div class="ground"></div>
+        </div>
+    </div>
+    
+    <div class="output">
+        Energy Output: <span id="energy-output">0.00</span> kW
+    </div>
+    
+    <div class="data-container">
+        <h2>Energy Collection Data</h2>
+        <div class="chart-container" id="chart-container"></div>
+    </div>
+    
+    <div class="explanation">
+        <h2>How Solar Panels Work</h2>
+        <p>Solar panels convert sunlight into electricity through the photovoltaic effect. When sunlight hits the photovoltaic cells, photons energize electrons, creating an electric current.</p>
+        
+        <h3>Factors Affecting Solar Energy Collection:</h3>
+        <ul>
+            <li><strong>Panel Angle:</strong> The optimal angle depends on your location's latitude. Typically, positioning panels at an angle equal to your latitude maximizes annual energy production.</li>
+            <li><strong>Sun Position:</strong> As the sun moves across the sky, the amount of direct sunlight hitting the panel changes. Tracking systems that follow the sun can increase efficiency by 25-40%.</li>
+            <li><strong>Panel Material:</strong> Different materials have different efficiency rates at converting sunlight to electricity. Modern high-efficiency panels can convert up to 30% of solar energy into electricity.</li>
+            <li><strong>Weather Conditions:</strong> Cloud cover significantly reduces the amount of solar radiation reaching the panels, directly affecting energy output.</li>
+        </ul>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Initialize the solar panel cells
+        const solarPanel = document.getElementById('solar-panel');
+        for (let i = 0; i < 12; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'solar-cell';
+            solarPanel.appendChild(cell);
+        }
+        
+        // Initialize variables
+        let panelAngle = 30;
+        let sunPosition = 90;
+        let panelMaterial = 0.22;
+        let weatherCondition = 1.0;
+        let animationId = null;
+        
+        // Create sun rays
+        const createSunRays = () => {
+            const visualization = document.querySelector('.visualization');
+            // Clear existing rays
+            document.querySelectorAll('.sun-ray').forEach(ray => ray.remove());
+            
+            const sun = document.getElementById('sun');
+            const sunRect = sun.getBoundingClientRect();
+            const visRect = visualization.getBoundingClientRect();
+            
+            const sunCenterX = sunRect.left + sunRect.width/2 - visRect.left;
+            const sunCenterY = sunRect.top + sunRect.height/2 - visRect.top;
+            
+            const panel = document.getElementById('solar-panel');
+            const panelRect = panel.getBoundingClientRect();
+            const panelCenterX = panelRect.left + panelRect.width/2 - visRect.left;
+            const panelCenterY = panelRect.top + panelRect.height/2 - visRect.top;
+            
+            // Create a ray from sun to panel
+            const ray = document.createElement('div');
+            ray.className = 'sun-ray';
+            
+            // Calculate angle and distance
+            const dx = panelCenterX - sunCenterX;
+            const dy = panelCenterY - sunCenterY;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            ray.style.width = `${distance}px`;
+            ray.style.height = '10px';
+            ray.style.left = `${sunCenterX}px`;
+            ray.style.top = `${sunCenterY}px`;
+            ray.style.transform = `rotate(${angle}deg)`;
+            
+            visualization.appendChild(ray);
+        };
+        
+        // Update the visualization based on current values
+        const updateVisualization = () => {
+            // Update panel angle
+            const panelContainer = document.getElementById('panel-container');
+            panelContainer.style.transform = `translateX(-50%) rotate(${panelAngle}deg)`;
+            
+            // Update sun position
+            const sun = document.getElementById('sun');
+            const xPos = sunPosition;
+            const yPos = 100 + Math.sin((sunPosition - 90) * Math.PI / 180) * 100;
+            sun.style.left = `${xPos}px`;
+            sun.style.top = `${yPos}px`;
+            
+            // Create sun rays
+            createSunRays();
+            
+            // Calculate and update energy output
+            updateEnergyOutput();
+        };
+        
+        // Calculate energy output based on all factors
+        const calculateEnergyOutput = () => {
+            // Base value (ideal conditions)
+            const baseOutput = 1.0; // kW
+            
+            // Calculate angle factor (1.0 when sun rays are perpendicular to panel)
+            const sunAngle = Math.sin((sunPosition - 90) * Math.PI / 180) * 90;
+            const angleToSun = Math.abs(sunAngle - panelAngle);
+            const angleFactor = Math.cos(angleToSun * Math.PI / 180);
+            
+            // Time of day factor (reduced at dawn/dusk)
+            const timeOfDayFactor = Math.sin((sunPosition) * Math.PI / 180);
+            
+            // Panel material efficiency
+            const materialFactor = panelMaterial;
+            
+            // Weather condition factor
+            const weatherFactor = weatherCondition;
+            
+            // Calculate final output
+            let output = baseOutput * angleFactor * timeOfDayFactor * materialFactor * weatherFactor;
+            
+            // Ensure output is non-negative and reasonable
+            output = Math.max(0, output);
+            
+            return output.toFixed(2);
+        };
+        
+        // Update the energy output display
+        const updateEnergyOutput = () => {
+            const output = calculateEnergyOutput();
+            document.getElementById('energy-output').textContent = output;
+            
+            // Highlight panel based on output
+            const panel = document.getElementById('solar-panel');
+            const intensity = parseFloat(output) / (panelMaterial * weatherCondition);
+            panel.style.boxShadow = `0 0 ${intensity * 20}px rgba(255, 235, 59, ${intensity * 0.8})`;
+            
+            // Update time display
+            const timeHour = 6 + (sunPosition / 180) * 12;
+            const hour = Math.floor(timeHour);
+            const minute = Math.floor((timeHour - hour) * 60);
+            const period = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+            document.getElementById('time-display').textContent = 
+                `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+            
+            // Add data point to chart
+            addDataPoint(parseFloat(output), `${hour12}:${minute.toString().padStart(2, '0')} ${period}`);
+        };
+        
+        // Create chart
+        let energyChart;
+        
+        const createChart = () => {
+            const ctx = document.createElement('canvas');
+            document.getElementById('chart-container').appendChild(ctx);
+            
+            energyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Energy Output (kW)',
+                        data: [],
+                        backgroundColor: 'rgba(26, 115, 232, 0.2)',
+                        borderColor: 'rgba(26, 115, 232, 1)',
+                        borderWidth: 2,
+                        tension: 0.2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Energy Output (kW)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time of Day'
+                            }
+                        }
+                    }
+                }
+            });
+        };
+        
+        // Add data point to chart
+        const addDataPoint = (value, label) => {
+            if (!energyChart) return;
+            
+            // Limit to 30 data points
+            if (energyChart.data.labels.length > 30) {
+                energyChart.data.labels.shift();
+                energyChart.data.datasets[0].data.shift();
+            }
+            
+            energyChart.data.labels.push(label);
+            energyChart.data.datasets[0].data.push(value);
+            energyChart.update();
+        };
+        
+        // Animate the sun throughout the day
+        const animateSun = () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            const animate = () => {
+                const sunPositionInput = document.getElementById('sun-position');
+                sunPosition = (parseFloat(sunPositionInput.value) + 1) % 181;
+                sunPositionInput.value = sunPosition;
+                updateVisualization();
+                
+                animationId = requestAnimationFrame(animate);
+            };
+            
+            animationId = requestAnimationFrame(animate);
+        };
+        
+        // Stop animation
+        const stopAnimation = () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        };
+        
+        // Event listeners
+        document.getElementById('panel-angle').addEventListener('input', (e) => {
+            panelAngle = parseInt(e.target.value);
+            document.getElementById('angle-value').textContent = panelAngle;
+            updateVisualization();
+        });
+        
+        document.getElementById('sun-position').addEventListener('input', (e) => {
+            sunPosition = parseInt(e.target.value);
+            updateVisualization();
+        });
+        
+        document.getElementById('panel-material').addEventListener('change', (e) => {
+            panelMaterial = parseFloat(e.target.value);
+            updateVisualization();
+        });
+        
+        document.getElementById('weather-condition').addEventListener('change', (e) => {
+            weatherCondition = parseFloat(e.target.value);
+            updateVisualization();
+        });
+        
+        document.getElementById('animate-sun').addEventListener('click', animateSun);
+        document.getElementById('stop-animation').addEventListener('click', stopAnimation);
+        
+        // Initialize the chart and visualization
+        window.addEventListener('load', () => {
+            createChart();
+            updateVisualization();
+        });
+    </script>
+</body>
+</html>
